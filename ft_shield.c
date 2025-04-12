@@ -1,15 +1,5 @@
 #include "ft_shield.h"
 
-void server()
-{
-	while (1)
-	{
-		syslog(LOG_INFO, "listening...\n");
-		sleep(5);
-	}
-	syslog(LOG_INFO, "loop exited\n");
-}
-
 int egg_plant(char *exec_path)
 {
 	int bin; // file descriptor of /bin/ft_shield
@@ -75,7 +65,7 @@ int main(int argc, char **argv)
 		// ft_shield.service
 		syslog(LOG_INFO, "server\n");
 		// main logic for setting backdoor
-		server();
+		// server();
 	}
 	syslog(LOG_INFO, "end of main function\n");
 	closelog();

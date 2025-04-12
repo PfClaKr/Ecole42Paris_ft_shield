@@ -1,18 +1,26 @@
 #ifndef FT_SHIELD_H
 # define FT_SHIELD_H
 
+# include <unistd.h>
 # include <stdio.h>
 # include <stdlib.h>
-# include <unistd.h>
+# include <stdbool.h>
 # include <fcntl.h>
+# include <sys/stat.h>
 # include <string.h>
 # include <syslog.h>
-# include <sys/stat.h>
+
+
+// PATH CONFIGURATION
 
 # define BIN_PATH "/bin/ft_shield"
 # define EXE_PATH "/home/s/sh/a.out"
+# define SYSTEMD_PATH "/etc/systemd/system/"
 
-# define CONFIG "[Unit]\n\
+
+// SYSTEMD CONFIGURATION
+
+# define SYSTEMD_CONFIG "[Unit]\n\
 Description=project ft_shield\n\
 \n\
 [Service]\n\
@@ -25,5 +33,12 @@ StandardOutput=journal\n\
 \n\
 [Install]\n\
 WantedBy=multi-user.target\n"
+
+
+
+// SYSVINIT CONFIGURATION
+
+# define SYSVINIT_CONFIG ""
+
 
 #endif

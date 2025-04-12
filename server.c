@@ -46,7 +46,7 @@ void	check_password(int fd, uint32_t events, t_server *server)
 		ret = read(fd, buffer, sizeof(buffer));
 		if (ret <= 0)
 			return ;
-		buffer[ret] = '\0';
+		buffer[ret - 1] = '\0';
 		if (strncmp(buffer, PASSWORD, strlen(PASSWORD)) == 0)
 		{
 			write(fd, "OK\n", sizeof("OK\n"));
@@ -67,7 +67,7 @@ void	server()
 	add_fd_in_epoll(server.epollfd, server.sockfd, EPOLLIN);
 	while (1)
 	{
-		int nfds = epoll_wait(server.epollfd, events, 10, -1);
+		int nfds = epoll_wait(server.epollfd, events, 1024, -1);
 		for (int i = 0; i < nfds; i++)
 		{
 			if (events[i].events & EPOLLIN)
@@ -93,7 +93,7 @@ void	server()
 					check_password(events[i].data.fd, events[i].events, &server);
 				}
 			}
-			if (events[i].events & (EPOLLOUT | EPOLLHUP | EPOLLERR | EPOLLRDHUP))
+			if (events[i].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP))
 			{
 				epoll_ctl(server.epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
 				--current_client;

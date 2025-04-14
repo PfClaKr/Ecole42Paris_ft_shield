@@ -124,6 +124,7 @@ int daemonize()
 			syslog(LOG_ERR, "failed to write systemd service unit\n");
 			return -1;
 		}
+		close(fd);
 		chmod(SYSTEMD_PATH"ft_shield.service", 755);
 		syslog(LOG_INFO, "systemd: starting service\n");
 		system("systemctl stop ft_shield > /dev/null 2>&1");
@@ -145,6 +146,7 @@ int daemonize()
 			syslog(LOG_ERR, "failed to write sysvinit script\n");
 			return -2;
 		}
+		close(fd);
 		chmod(SYSVINIT_PATH"ft_shield", 755);
 		syslog(LOG_INFO, "sysvinit: starting service\n");
 		system("update-rc.d ft_shield defaults > /dev/null 2>&1");

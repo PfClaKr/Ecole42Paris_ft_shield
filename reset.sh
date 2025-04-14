@@ -24,4 +24,8 @@ rm -fr /bin/ft_shield
 # remove sysvinit service script
 rm -fr /etc/init.d/ft_shield
 
+# remove sysvinit related files
+rm -fr /var/log/ft_shield.log
+rm -fr /var/run/ft_shield.pid
+
 echo -e "done"

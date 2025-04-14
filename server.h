@@ -11,20 +11,16 @@
 
 # define PORT_FORTYTWO 4242
 
-typedef struct s_client
-{
-	int		fd;
-
-}			t_client;
-
 typedef struct s_server
 {
 	struct sockaddr_in	addr;
 	bool	request_shell[1024];
+	bool	connected[1024];
 	int		port;
 	int		sockfd;
 	int		epollfd;
 	int		max_clients;
+	int		current_client;
 }			t_server;
 
 void	server();

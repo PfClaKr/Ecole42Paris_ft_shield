@@ -3,8 +3,6 @@
 
 # define PASSWORD "4242"
 
-int	current_client = 0;
-
 void	init_server(t_server *server)
 {
 	bzero(server, sizeof(t_server));
@@ -52,19 +50,17 @@ void	check_password(int fd, uint32_t events, t_server *server)
 		if (ret <= 0)
 			return ;
 		buffer[ret - 1] = '\0';
-		if (strncmp(buffer, PASSWORD, strlen(PASSWORD)) == 0)
+		if (strcmp(buffer, PASSWORD) == 0)
 		{
-			current_client++;
-			// write(fd, "OK\n", sizeof("OK\n")); //this moment, the shell have to open
+			server->current_client++;
+			printf("password ok current_client N.%d fd %d\n", server->current_client, fd);
 			// printf("Cureent client in: %d\n", current_client);
 			little_shell(fd, server);
 		}
 		else
 		{
 			epoll_ctl(server->epollfd, EPOLL_CTL_DEL, fd, NULL);
-			--current_client;
-			// write(fd, "KO\n", sizeof("KO\n"));
-			// printf("Cureent client out: %d\n", current_client);
+			shutdown(fd, SHUT_RDWR);
 			close(fd);
 		}
 	}
@@ -87,35 +83,40 @@ void	server()
 			{
 				if (events[i].data.fd == server.sockfd)
 				{
-					t_client	client;
+					int	fd;
 
-					if (current_client < 2)
+					if (server.current_client < 3)
 					{
-						client.fd = accept(server.sockfd, NULL, NULL);
-						add_fd_in_epoll(server.epollfd, client.fd, EPOLLIN);
-						if (server.request_shell[client.fd] == true)
+						fd = accept(server.sockfd, NULL, NULL);
+						add_fd_in_epoll(server.epollfd, fd, EPOLLIN | EPOLLET);
+						if (server.request_shell[fd] == true)
 						{
-							shell(client.fd, &server);
+							shell(fd, &server);
 							continue ;
 						}
-						write(client.fd, "password: ", sizeof("password: "));
+						write(fd, "password: ", sizeof("password: "));
 					}
 					else
 					{
 						write(events[i].data.fd, "try later. Connection max\n", sizeof("try later. Connection max\n"));
+						shutdown(events[i].data.fd, SHUT_RDWR);
 						close(events[i].data.fd);
 					}
 				}
 				else
 				{
-					check_password(events[i].data.fd, events[i].events, &server);
+					if (server.connected[events[i].data.fd] == false)
+						check_password(events[i].data.fd, events[i].events, &server);
+					else
+						little_shell(events[i].data.fd, &server);
 				}
 			}
 			if (events[i].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP))
 			{
 				epoll_ctl(server.epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
 				printf("Client disconnected %d\n", events[i].data.fd);
-				--current_client;
+				server.current_client--;
+				shutdown(events[i].data.fd, SHUT_RDWR);
 				close(events[i].data.fd);
 			}
 		}

@@ -4,6 +4,7 @@
 #include "shell.h"
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <unistd.h>

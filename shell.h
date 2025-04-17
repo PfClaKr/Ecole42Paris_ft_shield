@@ -9,7 +9,6 @@
 
 typedef struct s_server t_server;
 
-void	little_shell(int fd, t_server *server);
-void 	shell(int fd, t_server *server);
+
 
 #endif

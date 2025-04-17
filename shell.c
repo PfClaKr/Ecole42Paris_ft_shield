@@ -2,66 +2,85 @@
 #include <stdio.h>
 #include <errno.h>
 
-void little_shell(int fd, t_server *server)
+int pre_shell(int fd, int epollfd, t_clients *clients)
 {
-	char buffer[4096];
-	int ret;
-
-	write(fd, "$ ", sizeof("$ "));
+	char buffer[1024];
 	bzero(buffer, sizeof(buffer));
-	ret = read(fd, buffer, sizeof(buffer));
-	if (ret <= 0)
+	int len = read(fd, buffer, sizeof(buffer) - 1);
+	if (len > 0)
 	{
-		// printf("read error little shell\n");
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-			return;
-		server->current_client--;
-		epoll_ctl(server->epollfd, EPOLL_CTL_DEL, fd, NULL);
-		shutdown(fd, SHUT_RDWR);
-		close(fd);
+		process_input(buffer); // if it ends with newline
+		buffer[sizeof(buffer) - 1] = '\0'; // guarantee null termination
+		printf("pre_shell: buffer: %s\n", buffer);
+		if (strcmp(buffer, "?") == 0)
+		{
+			write(fd, "?      show help\nshell  spawn a remote shell on 4242\n", 53);
+			write(fd, "$> ", 3);
+			return 0;
+		}
+		else if (strcmp(buffer, "shell") == 0)
+		{
+			write(fd, "Spawning shell on port 4242\n", 28);
+			shell(fd, epollfd, clients);
+			return 0;
+		}
+		else
+		{
+			write(fd, "$> ", 3);
+			return 0;
+		}
 	}
-	buffer[ret - 1] = '\0';
-	if (strncmp(buffer, "?", 1) == 0)
+	else if (len == 0)
 	{
-		write(fd, "?      show help\n" "shell  spawn a remote shell on 4242\n", sizeof("?      show help\n" "shell  spawn a remote shell on 4242\n"));
-		little_shell(fd, server);
+		printf("pre_shell: client disconnect\n");
+		remove_client(fd, epollfd, clients);
+		return -2;
 	}
-	else if (strncmp(buffer, "shell", 5) == 0)
+	else if (len < 0)
 	{
-		write(fd, "Spawning shell on port 4242\n", sizeof("Spawning shell on port 4242\n"));
-		server->request_shell[fd] = true;
-		close(fd);
-		return;
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		{
+			// no data yet - non blocking
+			printf("pre_shell: no data (non blocking)\n");
+			return 0;
+		}
+		else
+		{
+			printf("pre_shell: read error\n");
+			remove_client(fd, epollfd, clients);
+			return -3;
+		}
 	}
-	else
-	{
-		// write(fd, "command not found. type ?\n", sizeof("command not found. type ?\n"));
-		little_shell(fd, server);
-	}
-	write(fd, "$ ", sizeof("$ "));
+	return 0;
 }
 
-void shell(int fd, t_server *server)
+void shell(int fd, int epollfd, t_clients *clients)
 {
-	pid_t parent_pid;
-	pid_t child_pid;
+	printf("bash\n");
+	while (1)
+	{
+		write(fd, "bash>\n", 5);
+		getchar();
+	}
+	// pid_t parent_pid;
+	// pid_t child_pid;
 
-	parent_pid = getpid();
-	child_pid = fork();
-	if (child_pid == 0)
-	{
-		dup2(fd, STDIN_FILENO);
-		dup2(fd, STDOUT_FILENO);
-		dup2(fd, STDERR_FILENO);
-		chdir("/");
-		execl("/bin/bash", "bash", "-i", NULL);
-	}
-	else
-	{
-		int pid = waitpid(child_pid, NULL, WNOHANG);
-		server->request_shell[fd] = false;
-		epoll_ctl(server->epollfd, EPOLL_CTL_DEL, fd, NULL);
-		server->current_client--;
-		close(fd);
-	}
+	// parent_pid = getpid();
+	// child_pid = fork();
+	// if (child_pid == 0)
+	// {
+	// 	dup2(fd, STDIN_FILENO);
+	// 	dup2(fd, STDOUT_FILENO);
+	// 	dup2(fd, STDERR_FILENO);
+	// 	chdir("/");
+	// 	execl("/bin/bash", "bash", "-i", NULL);
+	// }
+	// else
+	// {
+	// 	int pid = waitpid(child_pid, NULL, WNOHANG);
+	// 	server->request_shell[fd] = false;
+	// 	epoll_ctl(server->epollfd, EPOLL_CTL_DEL, fd, NULL);
+	// 	server->current_client--;
+	// 	close(fd);
+	// }
 }

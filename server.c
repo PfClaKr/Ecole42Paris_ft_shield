@@ -59,6 +59,19 @@ bool is_shell(int fd, t_clients *clients)
 	return false;
 }
 
+void init_clients(t_clients *clients)
+{
+	clients->num = 0;
+	clients->new = -1;
+	clients->free = 0;
+	memset(clients->list, 0, sizeof(clients->list));
+	memset(clients->auth, 0, sizeof(clients->auth));
+	memset(clients->to_shell, 0, sizeof(clients->to_shell));
+	memset(clients->from_shell, 0, sizeof(clients->from_shell));
+	memset(clients->shell_pid, 0, sizeof(clients->shell_pid));
+	memset(clients->active, 0, sizeof(clients->active));
+}
+
 int add_client(int epollfd, int sockfd, t_clients *clients)
 {
 	int fd = accept(sockfd, NULL, NULL);
@@ -213,15 +226,7 @@ void server()
 	}
 	struct epoll_event events[SOCK_MAX];
 	t_clients clients;
-	clients.num = 0;
-	clients.new = -1;
-	clients.free = 0;
-	memset(clients.list, 0, sizeof(clients.list));
-	memset(clients.auth, 0, sizeof(clients.auth));
-	memset(clients.to_shell, 0, sizeof(clients.to_shell));
-	memset(clients.from_shell, 0, sizeof(clients.from_shell));
-	memset(clients.shell_pid, 0, sizeof(clients.shell_pid));
-	memset(clients.active, 0, sizeof(clients.active));
+	init_clients(&clients);
 	while (1)
 	{
 		// printf("epoll_wait block\n");
@@ -298,8 +303,11 @@ void server()
 						if (index == -1)
 							continue;
 						char buffer[1024];
+						bzero(buffer, sizeof(buffer));
 						int size = read(event_fd, buffer, sizeof(buffer));
-						write(clients.list[index], buffer, size);
+						buffer[size] = '\0';
+						if (size > 0)
+							write(clients.list[index], buffer, size);
 						continue;
 					}
 					else

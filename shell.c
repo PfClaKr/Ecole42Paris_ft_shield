@@ -11,7 +11,7 @@ int pre_shell(int fd, int epollfd, t_clients *clients)
 	{
 		process_input(buffer);			   // if it ends with newline
 		buffer[sizeof(buffer) - 1] = '\0'; // guarantee null termination
-		printf("pre_shell: buffer: %s\n", buffer);
+		// printf("pre_shell: buffer: %s\n", buffer);
 		if (strcmp(buffer, "?") == 0)
 		{
 			write(fd, "?      show help\nshell  spawn a remote shell on 4242\n", 53);
@@ -32,7 +32,7 @@ int pre_shell(int fd, int epollfd, t_clients *clients)
 	}
 	else if (len == 0)
 	{
-		printf("pre_shell: client disconnect\n");
+		// printf("pre_shell: client disconnect\n");
 		remove_client(fd, epollfd, clients);
 		return -2;
 	}
@@ -41,12 +41,12 @@ int pre_shell(int fd, int epollfd, t_clients *clients)
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
 			// no data yet - non blocking
-			printf("pre_shell: no data (non blocking)\n");
+			// printf("pre_shell: no data (non blocking)\n");
 			return 0;
 		}
 		else
 		{
-			printf("pre_shell: read error\n");
+			// printf("pre_shell: read error\n");
 			remove_client(fd, epollfd, clients);
 			return -3;
 		}
@@ -54,13 +54,20 @@ int pre_shell(int fd, int epollfd, t_clients *clients)
 	return 0;
 }
 
-void set_nonblocking(int fd)
+int set_nonblocking(int fd)
 {
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags < 0)
-		perror("fcntl");
+	{
+		// perror("fcntl");
+		return -1;
+	}
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
-		perror("fcntl");
+	{
+		// perror("fcntl");
+		return -2;
+	}
+	return 0;
 }
 
 void shell(int fd, int epollfd, t_clients *clients)
@@ -87,9 +94,10 @@ void shell(int fd, int epollfd, t_clients *clients)
 
 	close(to_shell[0]);
 	close(from_shell[1]);
-	set_nonblocking(fd);
-	set_nonblocking(from_shell[0]);
-	set_nonblocking(to_shell[1]);
+	if (set_nonblocking(fd) < 0
+			&& set_nonblocking(from_shell[0]) < 0
+			&& set_nonblocking(to_shell[1]) < 0)
+		return ;
 
 	clients->to_shell[index] = to_shell[1];
 	clients->from_shell[index] = from_shell[0];

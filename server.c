@@ -114,14 +114,22 @@ void remove_client(int fd, int epollfd, t_clients *clients)
 {
 	int index = get_client_index(fd, clients);
 	if (index == -1)
+	{
+		printf("remove_client: client not found\n");
 		return;
+	}
 	printf("closing fd: %d", clients->list[index]);
 	epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->list[index], NULL);
 	epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->from_shell[index], NULL);
+	shutdown(clients->list[index], SHUT_WR);
 	close(clients->list[index]);
 	close(clients->from_shell[index]);
 	clients->list[index] = 0;
 	clients->auth[index] = 0;
+	clients->active[index] = 0;
+	clients->shell_pid[index] = 0;
+	clients->to_shell[index] = 0;
+	clients->from_shell[index] = 0;
 	clients->num--;
 	clients->free = index;
 }
@@ -210,11 +218,15 @@ void server()
 	clients.free = 0;
 	memset(clients.list, 0, sizeof(clients.list));
 	memset(clients.auth, 0, sizeof(clients.auth));
+	memset(clients.to_shell, 0, sizeof(clients.to_shell));
+	memset(clients.from_shell, 0, sizeof(clients.from_shell));
+	memset(clients.shell_pid, 0, sizeof(clients.shell_pid));
+	memset(clients.active, 0, sizeof(clients.active));
 	while (1)
 	{
-		printf("epoll_wait block\n");
+		// printf("epoll_wait block\n");
 		int nfds = epoll_wait(epollfd, events, SOCK_MAX, -1);
-		printf("epoll_wait block release\n");
+		// printf("epoll_wait block release\n");
 		for (int i = 0; i < nfds; i++)
 		{
 			if (events[i].events & EPOLLIN)
@@ -246,11 +258,32 @@ void server()
 					{
 						if (is_shell_running(event_fd, &clients) == 1)
 						{
+							printf("shell running\n");
 							int index = get_client_index(event_fd, &clients);
 							int to_shell = clients.to_shell[index];
 							char buffer[1024];
+							bzero(buffer, sizeof(buffer));
 							int size = read(event_fd, buffer, sizeof(buffer));
-							write(to_shell, buffer, size);
+							buffer[size] = '\0';
+							printf("is_shell_runing_buffer %d: %s\n", size, buffer);
+							if (size <= 0)
+							{
+								printf("is_shell_running remove client\n");
+								kill(clients.shell_pid[index], SIGKILL);
+								remove_client(event_fd, epollfd, &clients);
+							}
+							else
+							{
+								printf("is_shell_running write to shell\n");
+								write(to_shell, buffer, size);
+								usleep(1000);
+								if (waitpid(clients.shell_pid[index], NULL, WNOHANG))
+								{
+									printf("shell pid dead\n");
+									kill(clients.shell_pid[index], SIGKILL);
+									remove_client(event_fd, epollfd, &clients);
+								}
+							}
 							continue;
 						}
 						else
@@ -288,7 +321,7 @@ void server()
 					}
 				}
 			}
-			printf("\n");
+			// printf("\n");
 		}
 	}
 }

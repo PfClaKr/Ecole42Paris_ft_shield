@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <syslog.h>
+#include <signal.h>
 
 #define PORT_FORTYTWO 4242
 #define PASSWORD "4242"
@@ -40,7 +41,6 @@ typedef struct s_clients
 	int auth[MAX_CLIENT]; // list of authorized clients
 	int new;			  // new connected index
 	int free;			  // last disconnected index
-	int client_fd[MAX_CLIENT];
 	int to_shell[MAX_CLIENT];
 	int from_shell[MAX_CLIENT];
 	int shell_pid[MAX_CLIENT];

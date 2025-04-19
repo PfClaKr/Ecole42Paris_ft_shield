@@ -84,7 +84,7 @@ int add_client(int epollfd, int sockfd, t_clients *clients)
 	// printf("clients num: %d, index %d\n", clients->num, index);
 	if (clients->num == MAX_CLIENT && index == -1)
 	{
-		write(fd, "connection busy\n", 16);
+		// write(fd, "connection busy\n", 16);
 		shutdown(fd, SHUT_RDWR);
 		close(fd);
 		return 1;
@@ -116,7 +116,7 @@ int add_client(int epollfd, int sockfd, t_clients *clients)
 	}
 	else
 	{
-		write(fd, "connection busy\n", 16);
+		// write(fd, "connection busy\n", 16);
 		shutdown(fd, SHUT_RDWR);
 		close(fd);
 		return 1;

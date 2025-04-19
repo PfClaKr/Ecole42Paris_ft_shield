@@ -9,6 +9,4 @@
 
 typedef struct s_server t_server;
 
-
-
 #endif

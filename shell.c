@@ -9,7 +9,7 @@ int pre_shell(int fd, int epollfd, t_clients *clients)
 	int len = read(fd, buffer, sizeof(buffer) - 1);
 	if (len > 0)
 	{
-		process_input(buffer); // if it ends with newline
+		process_input(buffer);			   // if it ends with newline
 		buffer[sizeof(buffer) - 1] = '\0'; // guarantee null termination
 		printf("pre_shell: buffer: %s\n", buffer);
 		if (strcmp(buffer, "?") == 0)
@@ -54,33 +54,48 @@ int pre_shell(int fd, int epollfd, t_clients *clients)
 	return 0;
 }
 
+void set_nonblocking(int fd)
+{
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags < 0)
+		perror("fcntl");
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+		perror("fcntl");
+}
+
 void shell(int fd, int epollfd, t_clients *clients)
 {
-	printf("bash\n");
-	while (1)
-	{
-		write(fd, "bash>\n", 5);
-		getchar();
-	}
-	// pid_t parent_pid;
-	// pid_t child_pid;
+	int index = get_client_index(fd, clients);
+	if (index == -1)
+		return;
+	int to_shell[2], from_shell[2];
+	pipe(to_shell);
+	pipe(from_shell);
 
-	// parent_pid = getpid();
-	// child_pid = fork();
-	// if (child_pid == 0)
-	// {
-	// 	dup2(fd, STDIN_FILENO);
-	// 	dup2(fd, STDOUT_FILENO);
-	// 	dup2(fd, STDERR_FILENO);
-	// 	chdir("/");
-	// 	execl("/bin/bash", "bash", "-i", NULL);
-	// }
-	// else
-	// {
-	// 	int pid = waitpid(child_pid, NULL, WNOHANG);
-	// 	server->request_shell[fd] = false;
-	// 	epoll_ctl(server->epollfd, EPOLL_CTL_DEL, fd, NULL);
-	// 	server->current_client--;
-	// 	close(fd);
-	// }
+	pid_t pid = fork();
+	if (pid == 0)
+	{
+		dup2(to_shell[0], STDIN_FILENO);
+		dup2(from_shell[1], STDOUT_FILENO);
+		dup2(from_shell[1], STDERR_FILENO);
+		close(to_shell[1]);
+		close(from_shell[0]);
+		execve("/bin/sh", (char *[]){"/bin/sh", NULL}, NULL);
+		// execl("/bin/bash", "bash", "-i", NULL);
+		exit(1);
+	}
+
+	close(to_shell[0]);
+	close(from_shell[1]);
+	set_nonblocking(fd);
+	set_nonblocking(from_shell[0]);
+	set_nonblocking(to_shell[1]);
+
+	clients->to_shell[index] = to_shell[1];
+	clients->from_shell[index] = from_shell[0];
+	clients->shell_pid[index] = pid;
+	clients->active[index] = 1;
+
+	struct epoll_event e = {.events = EPOLLIN, .data.fd = from_shell[0]};
+	epoll_ctl(epollfd, EPOLL_CTL_ADD, from_shell[0], &e);
 }

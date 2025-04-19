@@ -1,6 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "base64.h"
 #include "shell.h"
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -18,7 +19,7 @@
 #include <signal.h>
 
 #define PORT_FORTYTWO 4242
-#define PASSWORD "4242"
+#define PASSWORD "NDI0Mg=="
 #define SOCK_MAX 32
 #define MAX_CLIENT 3
 

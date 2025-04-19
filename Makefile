@@ -2,7 +2,7 @@ MAKEFLAGS += --no-print-directory
 
 CC = gcc
 CFLAGS = -g3
-SRCS = server.c shell.c main.c
+SRCS = server.c shell.c base64.c ft_shield.c
 OBJS = $(SRCS:.c=.o)
 NAME = ft_shield
 

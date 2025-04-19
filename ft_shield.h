@@ -10,6 +10,7 @@
 # include <string.h>
 # include <syslog.h>
 
+# include "server.h"
 
 // PATH CONFIGURATION
 

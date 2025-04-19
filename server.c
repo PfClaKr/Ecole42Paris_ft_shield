@@ -166,7 +166,8 @@ int check_keycode(int fd, int epollfd, t_clients *clients)
 		process_input(buffer);			   // if it ends with newline
 		buffer[sizeof(buffer) - 1] = '\0'; // guarantee null termination
 		// printf("check_keycode: buffer: %s\n", buffer);
-		if (strcmp(base64_encode(buffer, strlen(buffer), buffer), PASSWORD) == 0)
+		base64_encode(buffer, strlen(buffer), buffer);
+		if (strcmp(buffer, PASSWORD) == 0)
 			return 1;
 		else
 			return 0;

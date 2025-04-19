@@ -159,15 +159,17 @@ void process_input(char *str)
 int check_keycode(int fd, int epollfd, t_clients *clients)
 {
 	char buffer[1024];
+	char buffer2[1024];
 	bzero(buffer, sizeof(buffer));
+	bzero(buffer2, sizeof(buffer2));
 	int len = read(fd, buffer, sizeof(buffer) - 1);
 	if (len > 0)
 	{
 		process_input(buffer);			   // if it ends with newline
 		buffer[sizeof(buffer) - 1] = '\0'; // guarantee null termination
 		// printf("check_keycode: buffer: %s\n", buffer);
-		base64_encode(buffer, strlen(buffer), buffer);
-		if (strcmp(buffer, PASSWORD) == 0)
+		base64_encode(buffer, strlen(buffer), buffer2);
+		if (strcmp(buffer2, PASSWORD) == 0)
 			return 1;
 		else
 			return 0;

@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 	}
 	if (parent != 1 && parent != 2) // (!systemd && !sysvinit) so launch by user
 	{
-		printf("%s", LOGIN_42);
+		printf("%s\n", LOGIN_42);
 		if (duplicate(exec_path) < 0) // copy binary to /bin directory
 		{
 			// syslog(LOG_ERR, "failed to duplicate the program\n");

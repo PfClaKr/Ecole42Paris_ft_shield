@@ -18,6 +18,8 @@
 # define SYSTEMD_PATH "/etc/systemd/system/"
 # define SYSVINIT_PATH "/etc/init.d/"
 
+# define LOGIN_42 "ychun schaehun"
+
 
 // SYSTEMD CONFIGURATION
 

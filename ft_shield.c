@@ -184,6 +184,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
+		printf("%s", LOGIN_42);
 		server();
 	}
 	// syslog(LOG_DEBUG, "process end: %s\n", exec_path);

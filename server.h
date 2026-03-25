@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <syslog.h>
-#include <signal.h>
+#include <stdarg.h>
 
 #define PORT_FORTYTWO 4242
 #define PASSWORD "NDI0Mg=="

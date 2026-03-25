@@ -94,7 +94,7 @@ int add_client(int epollfd, int sockfd, t_clients *clients)
 		fcntl(fd, F_SETFL, O_NONBLOCK);
 		struct epoll_event fd_ev;
 		bzero(&fd_ev, sizeof(struct epoll_event));
-		fd_ev.events = EPOLLIN | EPOLLET;
+		fd_ev.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
 		fd_ev.data.fd = fd;
 		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &fd_ev) == -1)
 		{
@@ -237,7 +237,7 @@ void server()
 		// printf("epoll_wait block release\n");
 		for (int i = 0; i < nfds; i++)
 		{
-			if (events[i].events & EPOLLIN)
+			if (events[i].events & (EPOLLIN | EPOLLRDHUP))
 			{
 				int event_fd = events[i].data.fd;
 				// printf("fd: %d\n", event_fd);
@@ -275,7 +275,6 @@ void server()
 							char buffer[1024];
 							bzero(buffer, sizeof(buffer));
 							int size = read(event_fd, buffer, sizeof(buffer));
-							buffer[size] = '\0';
 							// printf("is_shell_runing_buffer %d: %s\n", size, buffer);
 							if (size <= 0)
 							{
@@ -285,6 +284,7 @@ void server()
 							}
 							else
 							{
+								buffer[size] = '\0';
 								// printf("is_shell_running write to shell\n");
 								write(to_shell, buffer, size);
 								usleep(1000);

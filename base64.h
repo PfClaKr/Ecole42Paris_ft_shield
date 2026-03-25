@@ -12,10 +12,8 @@ base64_encode(const unsigned char *in, unsigned int inlen, char *out);
 
 int	main()
 {
-	char a[10000];
-	int len = base64_encode("4242", 4, a);
-	printf("%s\n", a);
-	base64_decode(a, len, a);
+	char a[100];
+	int len = base64_encode("password", 8, a);
 	printf("%s\n", a);
 }
 

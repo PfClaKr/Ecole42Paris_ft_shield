@@ -4,9 +4,6 @@
 #define BASE64DE_FIRST '+'
 #define BASE64DE_LAST 'z'
 
-// NDI0Mg==
-// 4242
-
 static const char base64en[] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
 	'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',

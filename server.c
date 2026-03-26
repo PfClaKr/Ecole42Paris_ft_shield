@@ -132,11 +132,14 @@ void remove_client(int fd, int epollfd, t_clients *clients)
 		return;
 	}
 	// printf("closing fd: %d", clients->list[index]);
+	if (clients->active[index] == 1)
+	{
+		epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->from_shell[index], NULL);
+		close(clients->from_shell[index]);
+	}
 	epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->list[index], NULL);
-	epoll_ctl(epollfd, EPOLL_CTL_DEL, clients->from_shell[index], NULL);
 	shutdown(clients->list[index], SHUT_WR);
 	close(clients->list[index]);
-	close(clients->from_shell[index]);
 	clients->list[index] = 0;
 	clients->auth[index] = 0;
 	clients->active[index] = 0;

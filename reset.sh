@@ -9,11 +9,15 @@
 
 
 # stop systemd service
-systemctl disable ft_shield.service
-systemctl stop ft_shield.service
+if which systemctl > /dev/null 2>&1; then
+	systemctl disable ft_shield.service
+	systemctl stop ft_shield.service
+fi
 
 # stop sysvinit service
-service ft_shield stop
+if which service > /dev/null 2>&1; then
+	service ft_shield stop
+fi
 
 # remove systemd service unit
 rm -fr /etc/systemd/system/ft_shield.service

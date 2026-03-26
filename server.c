@@ -1,17 +1,5 @@
 #include "server.h"
 
-void log_message(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    FILE *f = fopen("debug.log", "a");
-    if (f) {
-        vfprintf(f, format, args);
-        fprintf(f, "\n");
-        fclose(f);
-    }
-    va_end(args);
-}
-
 int get_client_index(int fd, t_clients *clients)
 {
 	for (int i = 0; i < MAX_CLIENT; i++)
@@ -106,7 +94,7 @@ int add_client(int epollfd, int sockfd, t_clients *clients)
 		fcntl(fd, F_SETFL, O_NONBLOCK);
 		struct epoll_event fd_ev;
 		bzero(&fd_ev, sizeof(struct epoll_event));
-		fd_ev.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
+		fd_ev.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
 		fd_ev.data.fd = fd;
 		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &fd_ev) == -1)
 		{
@@ -175,7 +163,6 @@ int check_keycode(int fd, int epollfd, t_clients *clients)
 	bzero(buffer, sizeof(buffer));
 	bzero(buffer2, sizeof(buffer2));
 	int len = read(fd, buffer, sizeof(buffer) - 1);
-	log_message("check_keycode len: %d", len);
 	if (len > 0)
 	{
 		process_input(buffer);			   // if it ends with newline
@@ -250,10 +237,9 @@ void server()
 		// printf("epoll_wait block release\n");
 		for (int i = 0; i < nfds; i++)
 		{
-			if (events[i].events & (EPOLLIN | EPOLLRDHUP))
+			if (events[i].events & (EPOLLIN | EPOLLRDHUP | EPOLLHUP))
 			{
 				int event_fd = events[i].data.fd;
-				log_message("Event on fd %d, events: %d", event_fd, events[i].events);
 				if (event_fd == sockfd)
 				{
 					int cl_state = add_client(epollfd, sockfd, &clients);

@@ -7,14 +7,14 @@ Do NOT deploy this on any public-facing or production machine.
 Unauthorized port opening or creating persistent background processes may be considered malicious outside of your learning setup.
 ---
 
-### 📦 short brief how to set project before compile
+### short brief how to set project before compile
 - Make sure you are running in a **VM**  
   (or else it will open your own port `4242` publicly)
 - Make sure you are running as **root**
 
 ---
 
-### ✅ how to know if it is working (after executing ft_shield)
+### how to know if it is working (after executing ft_shield)
 - `$ systemctl status ft_shield` : service must be running
 - `/bin/ft_shield` : file must be present
 - `/etc/systemd/system/ft_shield.service` : file must be present
@@ -22,7 +22,7 @@ Unauthorized port opening or creating persistent background processes may be con
 
 ---
 
-### ⚙️ what does ft_shield do?
+### what does ft_shield do?
 - `ft_shield` is a minimal background process designed to mimic the behavior of a basic trojan for educational purposes.
 - Once installed and started, it will:
   - Open a port (`4242`) and listen for incoming connections.
@@ -38,7 +38,7 @@ $>
 ```
 ---
 
-### 🔐 security warning
+### security warning
 
 > This project opens a **remote root shell** on your machine via port `4242`.  
 > This means **anyone** who can reach your machine on that port may potentially gain **full root access**, depending on your firewall and network setup.
@@ -55,7 +55,7 @@ This tool is strictly for **educational and ethical hacking practice** under con
 
 ---
 
-### 🧹 how to stop or remove ft_shield
+### how to stop or remove ft_shield
 
 ```bash
 # simply run our shell script
